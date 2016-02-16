@@ -10,12 +10,17 @@ import UIKit
 
 class ViewController: UIViewController, UITextFieldDelegate {
 
-    @IBOutlet weak var buttonClearText: UIButton!
+
     
     @IBOutlet weak var textToSearh: UITextField!
+   
+    @IBOutlet weak var lblMessageToUser: UILabel!
     
+    @IBOutlet weak var imageViewBookPicture: UIImageView!
     
-    @IBOutlet weak var textOutput: UITextView!
+    @IBOutlet weak var lblDisplayTitle: UILabel!
+    
+    @IBOutlet weak var lblDisplayAuthor: UILabel!
     
     
     // Mark: VIEWCONTROLLER LIFE CYCLE
@@ -23,7 +28,8 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+       
+        imageViewBookPicture.contentMode = .ScaleAspectFit
     
     
     }
@@ -34,8 +40,14 @@ class ViewController: UIViewController, UITextFieldDelegate {
     func textFieldShouldReturn(textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         
+        lblMessageToUser.text = ""
+        lblDisplayTitle.text = ""
+        imageViewBookPicture.image = nil
+        
+        
+        
         if (textField.text?.characters.count<13) { // Check if the ISBN as 13 numbers
-            textOutput.text = "Al ISBN le faltan mas numeros, deben de ser 13"
+            lblMessageToUser.text = "Al ISBN le faltan mas numeros, deben de ser 13"
         
         } else {
             asyncNetworkRequest(addDashesToISBN(textField.text!))
@@ -70,24 +82,13 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     
     // Mark: - HELPER FUNCTIONS
-
-    func syncNetworkRequest() {
-     
-        let urls = "https://openlibrary.org/api/books?jscmd=data&format=json&bibkeys=ISBN:978-84-376-0494-7"
-        
-        let url = NSURL(string: urls)
-
-        let data = NSData(contentsOfURL: url!)
-        
-        let text = NSString(data: data!, encoding: NSUTF8StringEncoding)
-        
-        textOutput.text = text as? String
-        //print("Termino")
-    }
+    
+    // 9780060833459
     
     func asyncNetworkRequest(isbn: String) {
         
         let urls = "https://openlibrary.org/api/books?jscmd=data&format=json&bibkeys=ISBN:" + isbn
+        
         
         let url = NSURL(string: urls)
         let session = NSURLSession.sharedSession()
@@ -95,23 +96,52 @@ class ViewController: UIViewController, UITextFieldDelegate {
         
         let block = { (data: NSData?, resp: NSURLResponse?, error: NSError?) -> Void in
             
+            guard (error == nil) else {
+                self.showError()
+                return
+            }
        
-                   let text = NSString(data: data!, encoding: NSUTF8StringEncoding)
-            
-                    dispatch_async(dispatch_get_main_queue(), {
-                        
-                        if error==nil {
-                            if data==nil {
-                                self.textOutput.text = "No existe ese numero ISBN"
-                            } else {
-                                self.textOutput.text = text! as String
-                            }
-                        } else {
-                        
-                            self.textOutput.text = "Hubo un error con la peticio al servidor"
-                        }
-                    })
+            do {
+             
+                let json = try NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.MutableLeaves)
+                
+                let dic1 = json as! NSDictionary
+                let isbn1 = "ISBN:"+isbn
+                let dic2 = dic1[isbn1] as! NSDictionary
+                let title = dic2["title"] as! NSString as String
+                self.updateTitle(title)
+                
+                guard let dic3 = dic2["cover"] as? NSDictionary else {
+                    print("Book does not have an image")
+                    return
                 }
+                
+                guard let imageURLString = dic3["large"] as? String else {
+                    print("Book does not have a large image")
+                    return
+                }
+                
+                let imageURL = NSURL(string: imageURLString)
+                
+                if let imageData = NSData(contentsOfURL: imageURL!) {
+                    
+                    dispatch_async(dispatch_get_main_queue()) {
+                    
+                    
+                    self.imageViewBookPicture.image = UIImage(data: imageData)
+                        
+                    }
+                }
+            }
+            catch _ {
+                
+            }
+            
+            
+        // let text = NSString(data: data!, encoding: NSUTF8StringEncoding)
+            
+        
+        }
         
         let dt = session.dataTaskWithURL(url!, completionHandler: block)
         dt.resume()
@@ -136,6 +166,32 @@ class ViewController: UIViewController, UITextFieldDelegate {
         
         return myISBN
     }
+
+    func showError() {
+    
+        dispatch_async(dispatch_get_main_queue()) {
+        
+        let ac = UIAlertController(title: "No hubo respuesta del servidor", message: "Verifica tu conexion de internet", preferredStyle: .Alert)
+            
+            ac.addAction(UIAlertAction(title: "Ok", style: .Default, handler: nil))
+        
+            self.presentViewController(ac, animated: true, completion: nil)
+        
+        }
+    }
+
+    func updateTitle(titleName: String) {
+        
+        dispatch_async(dispatch_get_main_queue(), {
+            
+            self.lblDisplayTitle.text = titleName
+            
+        })
+    }
+
+    
+    
+    
 }
 
 extension String {
