@@ -83,7 +83,9 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     // Mark: - HELPER FUNCTIONS
     
-    // 9780060833459
+    // 9780060833459 The effective executive, Peter Drucker
+    // 9780517549780
+    
     
     func asyncNetworkRequest(isbn: String) {
         
@@ -111,12 +113,44 @@ class ViewController: UIViewController, UITextFieldDelegate {
                 let title = dic2["title"] as! NSString as String
                 self.updateTitle(title)
                 
-                guard let dic3 = dic2["cover"] as? NSDictionary else {
+                let authors = dic2["authors"] as! [[String:AnyObject]]
+                
+                
+                
+                var i = 0
+                var allAuthors:String?
+                for author in authors {
+                    
+                    i++
+                    let authorName = author["name"] as! String
+                    
+                    if i==1 {
+                            allAuthors = authorName
+                        
+                    } else {
+                        
+                        allAuthors = allAuthors! + "; " + authorName
+                    }
+                    
+                    
+                    print(allAuthors)
+                    
+                }
+                
+                //Update UI with Authors names
+                dispatch_async(dispatch_get_main_queue()) {
+                    
+                    self.lblDisplayAuthor.text = allAuthors
+                    
+                }
+                
+                guard let imageDic = dic2["cover"] as? NSDictionary else {
                     print("Book does not have an image")
                     return
                 }
                 
-                guard let imageURLString = dic3["large"] as? String else {
+                
+                guard let imageURLString = imageDic["large"] as? String else {
                     print("Book does not have a large image")
                     return
                 }
@@ -132,6 +166,11 @@ class ViewController: UIViewController, UITextFieldDelegate {
                         
                     }
                 }
+                
+                
+                
+                
+                
             }
             catch _ {
                 
