@@ -116,7 +116,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
                 let authors = dic2["authors"] as! [[String:AnyObject]]
                 
                 
-                
+                // Extract Author's names
                 var i = 0
                 var allAuthors:String?
                 for author in authors {
@@ -131,10 +131,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
                         
                         allAuthors = allAuthors! + "; " + authorName
                     }
-                    
-                    
                     print(allAuthors)
-                    
                 }
                 
                 //Update UI with Authors names
@@ -160,17 +157,11 @@ class ViewController: UIViewController, UITextFieldDelegate {
                 if let imageData = NSData(contentsOfURL: imageURL!) {
                     
                     dispatch_async(dispatch_get_main_queue()) {
-                    
-                    
                     self.imageViewBookPicture.image = UIImage(data: imageData)
                         
                     }
                 }
-                
-                
-                
-                
-                
+               
             }
             catch _ {
                 
@@ -228,8 +219,6 @@ class ViewController: UIViewController, UITextFieldDelegate {
         })
     }
 
-    
-    
     
 }
 
